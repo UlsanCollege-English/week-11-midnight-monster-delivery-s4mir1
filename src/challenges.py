@@ -9,6 +9,7 @@ Rules:
 - Edge weights must be positive.
 """
 
+import heapq
 from math import inf
 
 
@@ -53,8 +54,22 @@ def validate_haunted_map(graph: dict[str, dict[str, int]]) -> None:
     Raises:
         ValueError: If the graph is invalid.
     """
-    # TODO: Implement this function.
-    raise NotImplementedError
+    if not isinstance(graph, dict):
+        raise ValueError("Graph must be a dictionary.")
+
+    for node, neighbors in graph.items():
+        if not isinstance(neighbors, dict):
+            raise ValueError(f"Neighbors of '{node}' must be a dictionary.")
+
+        for neighbor, weight in neighbors.items():
+            if neighbor not in graph:
+                raise ValueError(
+                    f"Neighbor '{neighbor}' of '{node}' is not a node in the graph."
+                )
+            if weight <= 0:
+                raise ValueError(
+                    f"Edge weight from '{node}' to '{neighbor}' must be positive, got {weight}."
+                )
 
 
 def monster_delivery_costs(
@@ -76,8 +91,31 @@ def monster_delivery_costs(
     Raises:
         ValueError: If the graph is invalid or start is missing.
     """
-    # TODO: Implement this function.
-    raise NotImplementedError
+    validate_haunted_map(graph)
+
+    if start not in graph:
+        raise ValueError(f"Start node '{start}' is not in the graph.")
+
+    costs = {node: inf for node in graph}
+    costs[start] = 0
+
+    # Min-heap: (cost, node)
+    heap = [(0, start)]
+
+    while heap:
+        current_cost, current_node = heapq.heappop(heap)
+
+        # Skip if we already found a better path
+        if current_cost > costs[current_node]:
+            continue
+
+        for neighbor, weight in graph[current_node].items():
+            new_cost = current_cost + weight
+            if new_cost < costs[neighbor]:
+                costs[neighbor] = new_cost
+                heapq.heappush(heap, (new_cost, neighbor))
+
+    return costs
 
 
 def shortest_monster_delivery(
@@ -101,8 +139,47 @@ def shortest_monster_delivery(
         If target is unreachable, return (math.inf, []).
         If start equals target, return (0, [start]).
     """
-    # TODO: Implement this function.
-    raise NotImplementedError
+    if start not in graph or target not in graph:
+        return (inf, [])
+
+    if start == target:
+        return (0, [start])
+
+    costs = {node: inf for node in graph}
+    costs[start] = 0
+    previous = {node: None for node in graph}
+
+    # Min-heap: (cost, node)
+    heap = [(0, start)]
+
+    while heap:
+        current_cost, current_node = heapq.heappop(heap)
+
+        if current_cost > costs[current_node]:
+            continue
+
+        if current_node == target:
+            break
+
+        for neighbor, weight in graph[current_node].items():
+            new_cost = current_cost + weight
+            if new_cost < costs[neighbor]:
+                costs[neighbor] = new_cost
+                previous[neighbor] = current_node
+                heapq.heappush(heap, (new_cost, neighbor))
+
+    if costs[target] == inf:
+        return (inf, [])
+
+    # Reconstruct path
+    path = []
+    node = target
+    while node is not None:
+        path.append(node)
+        node = previous[node]
+    path.reverse()
+
+    return (costs[target], path)
 
 
 def best_next_monster_stop(
@@ -127,5 +204,20 @@ def best_next_monster_stop(
     Returns:
         A tuple of (target, cost).
     """
-    # TODO: Optional stretch. Implement if you want an extra challenge.
-    raise NotImplementedError
+    if start not in graph:
+        return ("", inf)
+
+    costs = monster_delivery_costs(graph, start)
+
+    best_target = ""
+    best_cost = inf
+
+    for target in targets:
+        if target not in costs:
+            continue
+        target_cost = costs[target]
+        if target_cost < best_cost:
+            best_cost = target_cost
+            best_target = target
+
+    return (best_target, best_cost)
