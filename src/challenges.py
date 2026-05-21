@@ -9,6 +9,8 @@ Rules:
 - Edge weights must be positive.
 """
 
+from __future__ import annotations
+
 import heapq
 from math import inf
 
@@ -105,7 +107,7 @@ def monster_delivery_costs(
     while heap:
         current_cost, current_node = heapq.heappop(heap)
 
-        # Skip if we already found a better path
+        # Skip stale heap entries
         if current_cost > costs[current_node]:
             continue
 
@@ -147,7 +149,7 @@ def shortest_monster_delivery(
 
     costs = {node: inf for node in graph}
     costs[start] = 0
-    previous = {node: None for node in graph}
+    previous: dict[str, str | None] = {node: None for node in graph}
 
     # Min-heap: (cost, node)
     heap = [(0, start)]
@@ -171,9 +173,9 @@ def shortest_monster_delivery(
     if costs[target] == inf:
         return (inf, [])
 
-    # Reconstruct path
+    # Reconstruct path by walking backwards from target
     path = []
-    node = target
+    node: str | None = target
     while node is not None:
         path.append(node)
         node = previous[node]
@@ -215,9 +217,8 @@ def best_next_monster_stop(
     for target in targets:
         if target not in costs:
             continue
-        target_cost = costs[target]
-        if target_cost < best_cost:
-            best_cost = target_cost
+        if costs[target] < best_cost:
+            best_cost = costs[target]
             best_target = target
 
     return (best_target, best_cost)
